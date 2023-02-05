@@ -43,22 +43,19 @@
      
     a:hover { color:#A9BFA5}
      
-    input[type=text] {
+    textarea {
             width: 18px;
             padding: 3px;
-            position:absolute;
             right:5px;bottom:5px;
             border: 1px solid #E6e6e6;
             transition-property: all;
             transition-duration: .5s;
             transition-timing-function: ease;
             color: #bebebe;
-			background-position: -2px -1px;
-			background-image: url('http://i.imgur.com/ziSic3u.png');
-			background-repeat: no-repeat;
+            resize: none;
     }
      
-    input[type=text]:hover {
+    textarea:hover {
             border-color: #bebebe;
             transition-property: all;
             transition-duration: .5s;
@@ -68,7 +65,7 @@
 			background-position: 227px -1px;
 			padding-right: 20px;
     }
-	input[type=text]:focus {
+	textarea:focus {
             border-color: #bebebe;
             transition-property: all;
             transition-duration: .5s;
@@ -91,7 +88,29 @@
             left: 50%;
 			top: 40%;
     }
+
+    #hoursOutput {
+        display: block;
+        font-size: 20px;
+        margin-right: -100px;
+        text-align: left;
+        padding-bottom: 50px;
+    }
      
+    .hoursText {
+        position: absolute;
+        width: 760px;
+        left:50%;
+        top:60%;
+        margin-left: -385px;
+        margin-right: auto;
+        margin-top: 100px
+    }
+
+    .hoursText a {
+        color: #c3c3c3b3;
+    }
+
     h1 {
           padding-bottom: -600px;
 		  position: absolute;
@@ -103,6 +122,10 @@
 		  
     }
      
+    .hidden {
+        display: none !important;
+    }
+
     </style>
             <body>
             <h1 align="center" id="message" class="expandUp"></h1>
@@ -151,13 +174,63 @@
 			<a href="https://secure.usaepay.com/login?type=res">usaepay</a>
 			<a href="https://app.intercom.io/a/apps/">intercom</a>
 			<a href="https://github.com/vesiv">github</a>
-			<form method="get" action="http://www.google.com/search"> <input type="text" placeholder="" value=""
-            name="q">
            
             </div>
-     litt
+        <div class="hoursText">
+                <a id="hoursToggle" onclick="document.getElementById('hoursInput').classList.toggle('hidden')">hours</a>
+                <textarea id="hoursInput" class="hidden" type="text" style="height:100px; width: 400px; display:block;"></textarea>
+                <span id="hoursOutput"></span>
+        </div>
+            
+            
 	 
 	 <script>
+
+        
+
+        function processData(data) {
+                var dateRangeArray = data.split('\n');
+                var outputSQL = '';
+                var out = '';
+                var hasIssues = false;
+                dateRangeArray.forEach( i => {
+
+                        var rangeArray = i.split(' - ');
+                        if (rangeArray.length != 2) return;
+                        if (!rangeArray[1].split(' ')[0].includes('/')) {
+                                        var date = rangeArray[0].split(' ')[0];
+                                        rangeArray = [rangeArray[0], date + " " + rangeArray[1]]
+                        }
+
+                        rangeArray.forEach(a => {
+                                var timestamp = Date.parse(a);
+                                if (isNaN(timestamp)) {out = out + 'Invalid date detected -- ' + a + '<br>'; hasIssues = true;}
+                                
+                        })
+
+                        var difference = new Date(rangeArray[0]) -  new Date(rangeArray[1]);
+                        difference = (difference/1000/60/60 *  - 1).toFixed(2);
+                        if (difference > 6) out = out + ' Large Workday Detected: ' + difference + ' (' + rangeArray[0] + ' - ' + rangeArray[1] + ')<br>'
+
+                        var res = "(1134, 1226, '" + rangeArray[0] + "', '" + rangeArray[1] + "', 0, getutcdate())"
+                        if (outputSQL == '') outputSQL = 'INSERT INTO abundance.dbo.t_Time_Slips<br> (locationID, userID, timeIn, timeOut, deleted, itimestamp)<br>VALUES '
+                        outputSQL = outputSQL + '<br>' + res + ','
+
+                } )
+
+                outputSQL = outputSQL.slice(0, -1)
+                if (!hasIssues) out = out + outputSQL;
+
+                return out;
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+                document.getElementById('hoursInput').onchange = x=>{
+                        var input = x.target.value; 
+                        var output = processData(input);
+                        document.getElementById('hoursOutput').innerHTML = output;
+                }
+        });
 	$(window).scroll(function() {
 		$('#animatedElement').each(function(){
 		var imagePos = $(this).offset().top;
@@ -168,7 +241,9 @@
 			}
 		});
 	});
+
 </script>
+
 
 
     </body>
