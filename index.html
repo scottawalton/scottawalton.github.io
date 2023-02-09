@@ -193,6 +193,7 @@
                 var outputSQL = '';
                 var out = '';
                 var hasIssues = false;
+                var runningTotal = 0;
                 dateRangeArray.forEach( i => {
 
                         var rangeArray = i.split(' - ');
@@ -211,6 +212,7 @@
                         var difference = new Date(rangeArray[0]) -  new Date(rangeArray[1]);
                         difference = (difference/1000/60/60 *  - 1).toFixed(2);
                         if (difference > 6) out = out + ' Large Workday Detected: ' + difference + ' (' + rangeArray[0] + ' - ' + rangeArray[1] + ')<br>'
+                        runningTotal = runningTotal + difference;
 
                         var res = "(1134, 1226, '" + rangeArray[0] + "', '" + rangeArray[1] + "', 0, getutcdate())"
                         if (outputSQL == '') outputSQL = 'INSERT INTO abundance.dbo.t_Time_Slips<br> (locationID, userID, timeIn, timeOut, deleted, itimestamp)<br>VALUES '
@@ -219,6 +221,7 @@
                 } )
 
                 outputSQL = outputSQL.slice(0, -1)
+                outputSQL = 'Total Hours: <b>' + runningTotal + '</b><br><br>' + outputSQL
                 if (!hasIssues) out = out + outputSQL;
 
                 return out;
